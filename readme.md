@@ -67,3 +67,5 @@ El endpoint /upload reprocesa todas las facturas
 Swagger se expone en /api-docs
 
 Puerto por defecto: 3000
+
+El crhoneJob esta configurado en el archivo k8s-job.yaml
