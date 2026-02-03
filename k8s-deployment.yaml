@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: invoices-microservice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: invoices-microservice
+  template:
+    metadata:
+      labels:
+        app: invoices-microservice
+    spec:
+      containers:
+        - name: api
+          image: invoices-microservice:1.0.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          env:
+            - name: PORT
+              value: "3000"

@@ -1,0 +1,25 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: daily-customer-total
+spec:
+  schedule: "0 2 * * *"
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: customer-total-job
+              image: invoices-microservice:1.0.0
+              imagePullPolicy: IfNotPresent
+              command: ["node"]
+              args: ["src/jobs/daily-customer-total.job.js"]
+              env:
+                - name: CUSTOMER_ID
+                  value: "C001"
+                - name: API_BASE_URL
+                  value: "http://invoices-microservice"

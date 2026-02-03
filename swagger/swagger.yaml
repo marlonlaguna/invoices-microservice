@@ -1,0 +1,186 @@
+openapi: 3.0.3
+
+info:
+  title: Invoices Microservice API
+  description: |
+    Microservicio responsable del procesamiento, consulta y agregación
+    de facturas cargadas desde archivos Excel.
+
+    Funcionalidades principales:
+    - Consulta de facturas procesadas
+    - Consulta de facturas por ID
+    - Cálculo de totales por cliente
+    - Reprocesamiento masivo mediante carga de Excel
+  version: 1.0.0
+  contact:
+    name: Backend Team
+    email: backend@company.com
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:3000
+    description: Entorno local
+  - url: http://dev.api.company.com
+    description: Entorno de desarrollo
+
+tags:
+  - name: Invoices
+    description: Operaciones relacionadas con facturas
+  - name: Customers
+    description: Operaciones agregadas por cliente
+  - name: Upload
+    description: Carga y reprocesamiento de archivos Excel
+
+paths:
+
+  /invoices:
+    get:
+      tags: [Invoices]
+      operationId: getInvoices
+      summary: Lista todas las facturas procesadas
+      description: |
+        Devuelve el listado completo de facturas que han sido procesadas
+        y persistidas por el sistema.
+      responses:
+        '200':
+          description: Lista de facturas obtenida correctamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Invoice'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /invoices/{invoice_id}:
+    get:
+      tags: [Invoices]
+      operationId: getInvoiceById
+      summary: Obtiene una factura por su ID
+      description: |
+        Recupera una factura específica utilizando su identificador único.
+      parameters:
+        - $ref: '#/components/parameters/InvoiceId'
+      responses:
+        '200':
+          description: Factura encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invoice'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /customers/{customer_id}/total:
+    get:
+      tags: [Customers]
+      operationId: getCustomerTotal
+      summary: Total acumulado de facturas por cliente
+      description: |
+        Calcula el monto total acumulado de todas las facturas
+        asociadas a un cliente específico.
+      parameters:
+        - $ref: '#/components/parameters/CustomerId'
+      responses:
+        '200':
+          description: Total del cliente calculado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerTotal'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /upload:
+    post:
+      tags: [Upload]
+      operationId: uploadInvoicesExcel
+      summary: Carga y reprocesa un archivo Excel de facturas
+      description: |
+        Permite subir un archivo Excel (.xlsx) que contiene facturas.
+        El sistema reprocesa completamente el archivo y recalcula
+        impuestos, descuentos y totales.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Archivo Excel con las facturas
+      responses:
+        '200':
+          description: Archivo procesado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '422':
+          description: Archivo con formato inválido
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+
+  parameters:
+    InvoiceId:
+      name: invoice_id
+      in: path
+      required: true
+      description: Identificador único de la factura
+      schema:
+        type: string
+        example: INV-001
+
+    CustomerId:
+      name: customer_id
+      in: path
+      required: true
+      description: Identificador único del cliente
+      schema:
+        type: string
+        example: C001
+
+  schemas:
+
+    Invoice:
+      type: object
+      required:
+        - invoice_id
+        - customer_id
+        - customer_name
+        - amount
+        - date
+        - total
+      properties:
+        invoice_id:
+          type: string
+          example: INV-001
+        customer_id:
+          type: string
+          example: C001
+        customer_name:
+          type: string
+          example: Juan Pérez
+        amount:
+          type: number
+          format: decimal
+          minimum: 0
+          example: 1000
+        tax_rate:
+          type: number
+          format: decimal
+          minimum: 0
+          example: 0
